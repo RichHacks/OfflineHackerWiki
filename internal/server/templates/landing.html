@@ -1,0 +1,68 @@
+{{define "landing.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HackerWiki</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="landing-body">
+
+<div class="landing-shell">
+  <header class="landing-header">
+    <div class="landing-logo">
+      <span class="logo-bracket">[</span>
+      <span class="logo-text">HackerWiki</span>
+      <span class="logo-bracket">]</span>
+    </div>
+    <p class="landing-tagline">Offline Security Reference</p>
+    <div class="landing-meta">
+      <span class="meta-item">
+        <span class="meta-dot active"></span>
+        <span id="active-count"></span> sources loaded
+      </span>
+      <span class="meta-sep">·</span>
+      <span class="meta-item">Update: <code>git submodule update --remote</code></span>
+    </div>
+  </header>
+
+  <main class="landing-grid">
+    {{range .Tools}}
+    <a href="{{if .Enabled}}{{.URL}}{{else}}#{{end}}"
+       class="tool-card {{if not .Enabled}}disabled{{end}}"
+       {{if not .Enabled}}aria-disabled="true"{{end}}>
+      <div class="card-top">
+        <span class="card-icon">{{.Icon}}</span>
+        <span class="card-tag">{{.Tag}}</span>
+        {{if .Enabled}}
+          <span class="card-status online">● online</span>
+        {{else}}
+          <span class="card-status offline">○ not found</span>
+        {{end}}
+      </div>
+      <div class="card-name">{{.Name}}</div>
+      <div class="card-desc">{{.Description}}</div>
+      {{if .Enabled}}
+        <div class="card-cta">Open →</div>
+      {{else}}
+        <div class="card-cta muted">Submodule not initialised</div>
+      {{end}}
+    </a>
+    {{end}}
+  </main>
+
+  <footer class="landing-footer">
+    <span>All content served locally from git submodules</span>
+    <span class="meta-sep">·</span>
+    <span><code>git submodule update --remote</code> to pull latest</span>
+  </footer>
+</div>
+
+<script>
+  const active = document.querySelectorAll('.tool-card:not(.disabled)').length;
+  document.getElementById('active-count').textContent = active;
+</script>
+</body>
+</html>
+{{end}}

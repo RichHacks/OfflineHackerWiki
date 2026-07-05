@@ -1,0 +1,33 @@
+[submodule "content/reverse-shell-generator"]
+	path = content/reverse-shell-generator
+	url = https://github.com/0dayCTF/reverse-shell-generator
+	shallow = true
+
+[submodule "content/xss-cheatsheet"]
+	path = content/xss-cheatsheet
+	url = https://github.com/PortSwigger/xss-cheatsheet
+	shallow = true
+
+[submodule "content/certipy"]
+	path = content/certipy
+	url = https://github.com/ly4k/Certipy.wiki
+	shallow = true
+
+[submodule "content/hacktricks"]
+	path = content/hacktricks
+	url = https://github.com/HackTricks-wiki/hacktricks
+	shallow = true
+
+[submodule "content/payloadsallthethings"]
+	path = content/payloadsallthethings
+	url = https://github.com/swisskyrepo/PayloadsAllTheThings
+	shallow = true
+[submodule "content/payloadsallthethings"]
+	path = content/payloadsallthethings
+	url = https://github.com/swisskyrepo/PayloadsAllTheThings
+
+[submodule "content/cyberchef"]
+	path = content/cyberchef
+	url = https://github.com/gchq/CyberChef.git
+	branch = gh-pages
+	shallow = true

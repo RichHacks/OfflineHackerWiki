@@ -1,0 +1,154 @@
+{{define "wiki.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Title}}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .wiki-search-wrap { padding: 8px 10px 6px; position: relative; }
+    .wiki-search {
+      width: 100%; box-sizing: border-box;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text);
+      font-size: 12px; padding: 5px 8px 5px 28px; outline: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236e7681' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 8px center;
+    }
+    .wiki-search:focus { border-color: var(--green); }
+    .wiki-search-results {
+      display: none; position: absolute; left: 10px; right: 10px; top: 100%;
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--radius); z-index: 50;
+      max-height: 55vh; overflow-y: auto;
+      box-shadow: 0 4px 16px rgba(0,0,0,.5);
+    }
+    .wiki-search-results.show { display: block; }
+    .wsr-item {
+      display: block; padding: 8px 12px;
+      border-bottom: 1px solid var(--border2);
+      text-decoration: none; color: var(--text);
+    }
+    .wsr-item:last-child { border-bottom: none; }
+    .wsr-item:hover { background: var(--bg3); }
+    .wsr-title { font-size: 12px; font-weight: 600; color: var(--blue); }
+    .wsr-snippet { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+    .wsr-empty { padding: 14px; text-align: center; color: var(--text3); font-size: 12px; }
+  </style>
+</head>
+<body class="wiki-body">
+
+<div class="wiki-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <a href="/" class="back-link">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        HackerWiki
+      </a>
+      <div class="sidebar-title">{{.WikiName}}</div>
+    </div>
+    <div class="wiki-search-wrap" id="wiki-search-wrap">
+      <input class="wiki-search" id="wiki-search" type="text" placeholder="Search…" autocomplete="off" spellcheck="false">
+      <div class="wiki-search-results" id="wiki-search-results"></div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav">
+      {{.Nav}}
+    </nav>
+  </aside>
+
+  <!-- Toggle for mobile -->
+  <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation">
+    <span></span><span></span><span></span>
+  </button>
+
+  <!-- Main content -->
+  <main class="wiki-main" id="wiki-main">
+    <div class="wiki-content">
+      {{.Content}}
+    </div>
+  </main>
+</div>
+
+<script>
+  // ── Search ──────────────────────────────────────────────────────────
+  const wikiSearch  = document.getElementById('wiki-search');
+  const wikiResults = document.getElementById('wiki-search-results');
+  const SEARCH_BASE = '{{.Prefix}}/_search';
+  let searchTimer, lastQ = '';
+
+  function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function hi(s, q) {
+    if (!q) return esc(s);
+    return esc(s).replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + ')', 'gi'),
+      '<mark style="background:rgba(63,185,80,.25);color:var(--green);border-radius:2px">$1</mark>');
+  }
+
+  wikiSearch.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(doSearch, 220);
+  });
+
+  wikiSearch.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { wikiResults.classList.remove('show'); wikiSearch.value = ''; }
+  });
+
+  document.addEventListener('click', e => {
+    if (!wikiResults.contains(e.target) && e.target !== wikiSearch) {
+      wikiResults.classList.remove('show');
+    }
+  });
+
+  async function doSearch() {
+    const q = wikiSearch.value.trim();
+    if (!q) { wikiResults.classList.remove('show'); return; }
+    if (q === lastQ) return;
+    lastQ = q;
+    let hits;
+    try {
+      const r = await fetch(SEARCH_BASE + '?q=' + encodeURIComponent(q));
+      hits = await r.json();
+    } catch(e) { hits = []; }
+
+    if (!hits || hits.length === 0) {
+      wikiResults.innerHTML = '<div class="wsr-empty">No results for "' + esc(q) + '"</div>';
+    } else {
+      wikiResults.innerHTML = hits.map(h =>
+        `<a class="wsr-item" href="${h.url}">
+          <div class="wsr-title">${hi(h.title, q)}</div>
+          ${h.snippet ? `<div class="wsr-snippet">${hi(h.snippet, q)}</div>` : ''}
+        </a>`
+      ).join('');
+    }
+    wikiResults.classList.add('show');
+  }
+
+  // ── Sidebar mobile toggle ────────────────────────────────────────────
+  const toggle = document.getElementById('sidebar-toggle');
+  const sidebar = document.getElementById('sidebar');
+  toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+  // Highlight current nav item and expand its ancestors
+  const current = document.querySelector('.nav-link.active');
+  if (current) {
+    current.scrollIntoView({ block: 'nearest' });
+    let el = current.parentElement;
+    while (el && el.id !== 'sidebar-nav') {
+      if (el.classList.contains('nav-children')) el.classList.add('open');
+      if (el.classList.contains('nav-item'))    el.classList.add('open');
+      el = el.parentElement;
+    }
+  }
+
+  // Click-to-toggle nav groups
+  document.querySelectorAll('.has-children > .nav-link, .has-children > .nav-group-label').forEach(el => {
+    el.addEventListener('click', e => {
+      if (el.tagName === 'SPAN') e.preventDefault();
+      el.closest('.has-children').classList.toggle('open');
+    });
+  });
+</script>
+</body>
+</html>
+{{end}}

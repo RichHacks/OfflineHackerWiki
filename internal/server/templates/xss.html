@@ -1,0 +1,389 @@
+{{define "xss.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XSS Cheat Sheet — HackerWiki</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { overflow: auto; background: #11141a; }
+    .xss-page { max-width: 1400px; margin: 0 auto; padding: 0 24px 80px; }
+
+    .xss-page-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0 12px; border-bottom: 1px solid #2a2f3a; margin-bottom: 18px;
+    }
+    .xss-back { font-size: 12px; color: #8b949e; text-decoration: none;
+                font-family: var(--mono); display: flex; align-items: center; gap: 4px; }
+    .xss-back:hover { color: #e6edf3; }
+    .xss-page-title { font-size: 20px; font-weight: 700; color: #e6edf3; }
+    .xss-page-subtitle { font-size: 13px; color: #8b949e; margin-top: 2px; }
+    .xss-total-badge {
+      margin-left: auto; font-size: 12px; font-family: var(--mono);
+      color: #e86c00; background: rgba(232,108,0,.1);
+      border: 1px solid rgba(232,108,0,.25); border-radius: 10px; padding: 2px 10px;
+    }
+
+    .xss-controls {
+      display: flex; flex-direction: column; gap: 12px;
+      background: #1c2128; border: 1px solid #2a2f3a; border-radius: 8px;
+      padding: 14px; margin-bottom: 20px;
+    }
+    .ctrl-label { font-size: 11px; color: #8b949e; font-weight: 600;
+                  text-transform: uppercase; letter-spacing: .05em; }
+    .xss-select, .xss-input {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; font-size: 12px; padding: 4px 8px; height: 28px; min-width: 140px;
+    }
+    .xss-select:focus, .xss-input:focus, .xss-multiselect:focus { outline: none; border-color: #e86c00; }
+    .ctrl-sep { width: 1px; height: 20px; background: #2a2f3a; margin: 0 4px; }
+
+    .xss-filter-row { display: flex; flex-wrap: wrap; gap: 16px; }
+    .xss-filter-col { display: flex; flex-direction: column; gap: 4px; }
+    .xss-multiselect {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; font-size: 12px; padding: 4px; min-width: 180px;
+    }
+    .xss-multiselect option { padding: 2px 6px; border-radius: 3px; }
+    .xss-multiselect option:checked { background: rgba(232,108,0,.25); color: #e6edf3; }
+
+    .xss-search-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .xss-input { min-width: 220px; flex: 1; }
+    .search-btn { border-color: #e86c00; color: #e6edf3; background: rgba(232,108,0,.15); }
+
+    .copy-group { display: flex; gap: 5px; flex-wrap: wrap; }
+    .copy-btn {
+      padding: 3px 10px; border: 1px solid #30363d; border-radius: 6px;
+      background: #0d1117; color: #8b949e; font-size: 12px;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    .copy-btn:hover { border-color: #e86c00; color: #e6edf3; }
+
+    .xss-showing { font-size: 12px; color: #8b949e; font-family: var(--mono); white-space: nowrap; }
+    .xss-showing b { color: #e86c00; }
+
+    .xss-section-hdr {
+      font-size: 13px; font-weight: 700; color: #e86c00;
+      text-transform: uppercase; letter-spacing: .06em;
+      padding: 18px 0 8px; border-bottom: 2px solid rgba(232,108,0,.3);
+    }
+    .xss-section-hdr.hidden { display: none; }
+
+    .xss-tbl-wrap { overflow-x: auto; margin-bottom: 4px; }
+    .xss-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .xss-tbl th {
+      background: #1c2128; border: 1px solid #2a2f3a;
+      padding: 7px 12px; text-align: left;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; color: #8b949e; white-space: nowrap;
+    }
+    .xss-tbl td { border: 1px solid #21262d; padding: 7px 12px; vertical-align: top; }
+    .xss-row:hover td { background: rgba(232,108,0,.03); }
+    .xss-row.hide { display: none; }
+
+    .col-ev   { min-width: 150px; max-width: 190px; }
+    .col-desc { min-width: 160px; max-width: 250px; }
+    .col-tag  { min-width: 70px; white-space: nowrap; }
+    .col-ex   { min-width: 280px; position: relative; }
+    .col-brow { min-width: 90px; }
+    .col-cdesc{ min-width: 200px; max-width: 280px; }
+
+    .ev-name { font-family: var(--mono); color: #e86c00; font-size: 13px; font-weight: 600; }
+    .ev-desc { font-size: 12px; color: #8b949e; margin-top: 2px; }
+    .ev-intx { font-size: 10px; color: #8b949e; margin-top: 3px; }
+
+    .tag-chip { font-family: var(--mono); font-size: 11px; background: #0d1117;
+                border: 1px solid #30363d; border-radius: 3px; padding: 1px 5px; color: #79c0ff; }
+    .tag-any  { color: #484f58; font-size: 12px; }
+
+    .brow-pills { display: flex; flex-wrap: wrap; gap: 3px; }
+    .brow-pill  { font-size: 11px; border-radius: 3px; padding: 1px 6px; border: 1px solid transparent; }
+    .brow-pill.chrome  { background:rgba(66,133,244,.1); color:#6ba3e8; border-color:rgba(66,133,244,.2); }
+    .brow-pill.firefox { background:rgba(255,100,50,.1);  color:#e08040; border-color:rgba(255,100,50,.2); }
+    .brow-pill.safari  { background:rgba(0,150,255,.1);   color:#5aacf0; border-color:rgba(0,150,255,.2); }
+    .no-browser { font-size: 11px; color: #484f58; font-style: italic; }
+
+    .xss-code {
+      font-family: var(--mono); font-size: 11.5px; line-height: 1.5;
+      color: #a5d6ff; white-space: pre-wrap; word-break: break-all;
+      cursor: pointer; margin: 0; display: block;
+    }
+    .xss-code:hover { color: #e6edf3; }
+    .row-copy {
+      float: right; background: none; border: 1px solid #30363d; border-radius: 3px;
+      color: #484f58; cursor: pointer; font-size: 11px; padding: 1px 5px; margin-left: 6px;
+      opacity: 0; transition: opacity .1s;
+    }
+    .col-ex:hover .row-copy { opacity: 1; }
+    .row-copy:hover { color: #e6edf3; border-color: #8b949e; }
+
+    .copy-toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #238636; color: #fff; padding: 8px 16px; border-radius: 6px;
+      font-size: 13px; font-family: var(--mono);
+      opacity: 0; transform: translateY(6px);
+      transition: opacity .2s, transform .2s; pointer-events: none; z-index: 100;
+    }
+    .copy-toast.show { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+<div class="xss-page">
+
+  <div class="xss-page-header">
+    <a href="/" class="xss-back">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      HackerWiki
+    </a>
+    <div>
+      <div class="xss-page-title">XSS Cheat Sheet</div>
+      <div class="xss-page-subtitle">Cross-site scripting event handlers and vectors</div>
+    </div>
+    <div class="xss-total-badge" id="xss-badge">{{.TotalRows}} payloads</div>
+  </div>
+
+  <div class="xss-controls">
+    <div class="copy-group">
+      <button class="copy-btn" id="cp-tags">Copy tags to clipboard</button>
+      <button class="copy-btn" id="cp-events">Copy events to clipboard</button>
+      <button class="copy-btn" id="cp-payloads">Copy payloads to clipboard</button>
+    </div>
+
+    <div class="xss-filter-row">
+      <div class="xss-filter-col">
+        <span class="ctrl-label">Tag</span>
+        <select class="xss-multiselect" id="tag-filter" multiple size="8">
+          <option value="" selected>All tags</option>
+          {{range .Tags}}<option value="{{.}}">{{.}}</option>{{end}}
+        </select>
+      </div>
+
+      <div class="xss-filter-col">
+        <span class="ctrl-label">Event</span>
+        <select class="xss-multiselect" id="event-filter" multiple size="8">
+          <option value="" selected>All events</option>
+          {{range .Events}}<option value="{{.}}">{{.}}</option>{{end}}
+        </select>
+      </div>
+
+      <div class="xss-filter-col">
+        <span class="ctrl-label">Browser</span>
+        <select class="xss-multiselect" id="browser-filter" multiple size="8">
+          <option value="" selected>All browsers</option>
+          <option value="chrome">Chrome</option>
+          <option value="firefox">Firefox</option>
+          <option value="safari">Safari</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="xss-search-row">
+      <span class="ctrl-label">Search type</span>
+      <select class="xss-select" id="search-type">
+        <option value="tag">tag</option>
+        <option value="event">event</option>
+        <option value="code">code</option>
+      </select>
+      <span class="ctrl-label">Search term</span>
+      <input class="xss-input" id="search-term" type="text" placeholder="regex, e.g. ^onmouse">
+      <button class="copy-btn search-btn" id="search-btn">Search</button>
+      <button class="copy-btn" id="search-clear">Clear</button>
+      <span class="ctrl-sep"></span>
+      <span class="xss-showing">Showing <b id="vis-count">{{.TotalRows}}</b> of {{.TotalRows}}</span>
+    </div>
+  </div>
+
+  <div class="xss-section-hdr" id="hdr-auto">Event handlers that do not require user interaction</div>
+  <div class="xss-tbl-wrap">
+    <table class="xss-tbl"><thead><tr>
+      <th class="col-ev">Event</th><th class="col-desc">Description</th>
+      <th class="col-tag">Tag</th><th class="col-ex">Example</th><th class="col-brow">Browsers</th>
+    </tr></thead><tbody id="body-auto"></tbody></table>
+  </div>
+
+  <div class="xss-section-hdr" id="hdr-user" style="margin-top:16px">Event handlers that require user interaction</div>
+  <div class="xss-tbl-wrap">
+    <table class="xss-tbl"><thead><tr>
+      <th class="col-ev">Event</th><th class="col-desc">Description</th>
+      <th class="col-tag">Tag</th><th class="col-ex">Example</th><th class="col-brow">Browsers</th>
+    </tr></thead><tbody id="body-user"></tbody></table>
+  </div>
+
+  <div id="cat-sections"></div>
+</div>
+
+<div class="copy-toast" id="toast"></div>
+
+<script>
+const ALL = {{.RowsJSON}};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toast(msg){
+  const t=document.getElementById('toast'); t.textContent=msg;
+  t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800);
+}
+function cp(text){ navigator.clipboard.writeText(text).then(()=>toast('Copied!')); }
+
+function browsersHTML(brows){
+  if(!brows||!brows.length) return '<span class="no-browser">—</span>';
+  return '<div class="brow-pills">'+brows.map(b=>`<span class="brow-pill ${esc(b)}">${esc(b[0].toUpperCase()+b.slice(1))}</span>`).join('')+'</div>';
+}
+function tagHTML(tag){
+  if(!tag||tag==='') return '<span class="tag-any">—</span>';
+  if(tag==='*') return '<span class="tag-any">* (any)</span>';
+  return `<span class="tag-chip">&lt;${esc(tag)}&gt;</span>`;
+}
+
+function makeEvRow(r){
+  const tr=document.createElement('tr');
+  tr.className='xss-row';
+  tr.dataset.ev  =r.event.toLowerCase();
+  tr.dataset.tag =(r.tag||'').toLowerCase();
+  tr.dataset.b   =JSON.stringify(r.browsers||[]);
+  tr.dataset.code=r.code||'';
+  tr.dataset.sec =r.section;
+  tr.innerHTML=`
+    <td class="col-ev"><div class="ev-name">${esc(r.event)}</div>${r.description?`<div class="ev-desc">${esc(r.description)}</div>`:''}${r.interaction?'<div class="ev-intx">Requires interaction</div>':''}</td>
+    <td class="col-desc" style="color:#8b949e;font-size:12px">${esc(r.description||'')}</td>
+    <td class="col-tag">${tagHTML(r.tag)}</td>
+    <td class="col-ex"><button class="row-copy" title="Copy">⧉</button><pre class="xss-code">${esc(r.code||'')}</pre></td>
+    <td class="col-brow">${browsersHTML(r.browsers)}</td>`;
+  tr.querySelector('.row-copy').addEventListener('click',()=>cp(r.code||''));
+  tr.querySelector('.xss-code').addEventListener('click', ()=>cp(r.code||''));
+  return tr;
+}
+
+function makeCatRow(r){
+  const tr=document.createElement('tr');
+  tr.className='xss-row';
+  tr.dataset.sec =r.section;
+  tr.dataset.code=r.code||'';
+  tr.dataset.b   =JSON.stringify(r.browsers||[]);
+  tr.innerHTML=`
+    <td class="col-cdesc" style="color:#8b949e;font-size:12px">${esc(r.description||'')}</td>
+    <td class="col-ex"><button class="row-copy" title="Copy">⧉</button><pre class="xss-code">${esc(r.code||'')}</pre></td>
+    <td class="col-brow">${browsersHTML(r.browsers)}</td>`;
+  tr.querySelector('.row-copy').addEventListener('click',()=>cp(r.code||''));
+  tr.querySelector('.xss-code').addEventListener('click',()=>cp(r.code||''));
+  return tr;
+}
+
+const bAuto=document.getElementById('body-auto'), bUser=document.getElementById('body-user');
+ALL.forEach(r=>{
+  if(r.section==='events-auto') bAuto.appendChild(makeEvRow(r));
+  else if(r.section==='events-user') bUser.appendChild(makeEvRow(r));
+});
+
+const CATS=['Classic vectors','Useful tags','AngularJS','Vue.js','Prototype pollution',
+  'Frameworks','Obfuscation','Polyglots','Protocols','Dangling markup','Encodings',
+  'WAF bypass','Special tags','Content types','Consuming tags','File uploads',
+  'Restricted characters','Response content types'];
+const catCont=document.getElementById('cat-sections');
+CATS.forEach(cat=>{
+  const rows=ALL.filter(r=>r.section==='cat:'+cat);
+  if(!rows.length) return;
+  const wrap=document.createElement('div');
+  const hdr=document.createElement('div');
+  hdr.className='xss-section-hdr'; hdr.textContent=cat;
+  hdr.id='hdr-'+cat.replace(/\s+/g,'-').toLowerCase();
+  wrap.appendChild(hdr);
+  const tblW=document.createElement('div'); tblW.className='xss-tbl-wrap';
+  const tbl=document.createElement('table'); tbl.className='xss-tbl';
+  tbl.innerHTML='<thead><tr><th class="col-cdesc">Description</th><th class="col-ex">Example</th><th class="col-brow">Browsers</th></tr></thead>';
+  const tbody=document.createElement('tbody');
+  rows.forEach(r=>tbody.appendChild(makeCatRow(r)));
+  tbl.appendChild(tbody); tblW.appendChild(tbl); wrap.appendChild(tblW);
+  catCont.appendChild(wrap);
+});
+
+function selectedValues(sel){
+  return Array.from(sel.selectedOptions).map(o=>o.value).filter(v=>v!=='');
+}
+
+function compileSearch(){
+  const term=document.getElementById('search-term').value;
+  if(!term) return null;
+  try { return new RegExp(term); } catch(e) { return null; }
+}
+
+function applyFilters(){
+  const tags  =selectedValues(document.getElementById('tag-filter')).map(v=>v.toLowerCase());
+  const evs   =selectedValues(document.getElementById('event-filter')).map(v=>v.toLowerCase());
+  const brows =selectedValues(document.getElementById('browser-filter'));
+  const searchType=document.getElementById('search-type').value;
+  const regexp=compileSearch();
+  let vis=0;
+
+  document.querySelectorAll('.xss-row').forEach(row=>{
+    let show=true;
+    const isEventRow=row.dataset.ev!==undefined;
+
+    if(isEventRow){
+      if(tags.length && row.dataset.tag!=='*' && !tags.includes(row.dataset.tag)) show=false;
+      if(evs.length && !evs.includes(row.dataset.ev)) show=false;
+    }
+
+    if(show && brows.length){
+      const rb=JSON.parse(row.dataset.b||'[]');
+      if(rb.length>0 && !rb.some(b=>brows.includes(b))) show=false;
+    }
+
+    if(show && isEventRow && regexp){
+      if(searchType==='tag' && !regexp.test(row.dataset.tag)) show=false;
+      else if(searchType==='event' && !regexp.test(row.dataset.ev)) show=false;
+      else if(searchType==='code' && !regexp.test(row.dataset.code)) show=false;
+    }
+
+    row.classList.toggle('hide',!show);
+    if(show) vis++;
+  });
+
+  document.getElementById('vis-count').textContent=vis;
+  document.getElementById('xss-badge').textContent=vis+' payloads';
+
+  // Hide empty section headers
+  document.querySelectorAll('.xss-section-hdr').forEach(hdr=>{
+    let el=hdr.nextElementSibling, any=false;
+    while(el&&!el.classList.contains('xss-section-hdr')){
+      if(el.querySelector&&el.querySelector('.xss-row:not(.hide)')) any=true;
+      el=el.nextElementSibling;
+    }
+    hdr.classList.toggle('hidden',!any);
+  });
+}
+
+document.getElementById('tag-filter').addEventListener('change',applyFilters);
+document.getElementById('event-filter').addEventListener('change',applyFilters);
+document.getElementById('browser-filter').addEventListener('change',applyFilters);
+document.getElementById('search-btn').addEventListener('click',applyFilters);
+document.getElementById('search-term').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){ e.preventDefault(); applyFilters(); }
+});
+document.getElementById('search-clear').addEventListener('click',()=>{
+  document.getElementById('search-term').value='';
+  ['tag-filter','event-filter','browser-filter'].forEach(id=>{
+    document.querySelectorAll('#'+id+' option').forEach(o=>{ o.selected = o.value===''; });
+  });
+  applyFilters();
+});
+
+document.getElementById('cp-tags').addEventListener('click',()=>{
+  const opts=Array.from(document.getElementById('tag-filter').options).filter(o=>o.value!=='');
+  const tags=opts.map(o=>o.value).sort();
+  cp(tags.join('\n')); toast('Copied '+tags.length+' tags');
+});
+document.getElementById('cp-events').addEventListener('click',()=>{
+  const opts=Array.from(document.getElementById('event-filter').options).filter(o=>o.value!=='');
+  const evs=opts.map(o=>o.value).sort();
+  cp(evs.join('\n')); toast('Copied '+evs.length+' events');
+});
+document.getElementById('cp-payloads').addEventListener('click',()=>{
+  const a=[]; document.querySelectorAll('.xss-row:not(.hide) .xss-code').forEach(p=>a.push(p.textContent));
+  cp(a.join('\n')); toast('Copied '+a.length+' payloads');
+});
+</script>
+</body>
+</html>
+{{end}}
