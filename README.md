@@ -6,16 +6,12 @@ A Go server that mirrors a handful of security reference sites/tools locally, ea
 
 ## First-time setup
 
+Prebuilt binaries for Linux, macOS, and Windows (amd64 + arm64) are already committed under `dist/` — no Go toolchain or build step needed.
+
 ```
 git clone --recurse-submodules git@github.com:RichHacks/OfflineHackerWiki.git
 cd OfflineHackerWiki
-scripts/build.sh
-```
-
-That cross-compiles binaries for Linux, macOS, and Windows (amd64 + arm64) into `dist/`. Run the one for your machine, e.g.:
-
-```
-./dist/hackerwiki-darwin-arm64
+./dist/hackerwiki-windows.exe
 ```
 
 Open http://localhost:8888. Custom port: `./dist/hackerwiki-darwin-arm64 -port 9000`.
