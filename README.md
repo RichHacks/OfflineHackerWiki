@@ -9,20 +9,20 @@ A Go server that mirrors a handful of security reference sites/tools locally, ea
 ```
 git clone --recurse-submodules git@github.com:RichHacks/OfflineHackerWiki.git
 cd OfflineHackerWiki
-go run .
+scripts/build.sh
 ```
 
-Open http://localhost:8888. Custom port: `go run . -port 9000`.
+That cross-compiles binaries for Linux, macOS, and Windows (amd64 + arm64) into `dist/`. Run the one for your machine, e.g.:
+
+```
+./dist/hackerwiki-darwin-arm64
+```
+
+Open http://localhost:8888. Custom port: `./dist/hackerwiki-darwin-arm64 -port 9000`.
 
 If you ever end up with an empty `content/<name>` directory (e.g. after a plain `git clone` without `--recurse-submodules`):
 
 ```
 git submodule update --init --recursive
-```
-
-## Building a binary
-
-```
-scripts/build.sh          # cross-compiles to dist/: linux/darwin/windows, amd64/arm64
 ```
 
