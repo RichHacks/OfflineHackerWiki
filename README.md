@@ -6,14 +6,11 @@ A Go server that mirrors a handful of security reference sites/tools locally, ea
 
 ## First-time setup
 
-This repo isn't pushed anywhere yet — there's no remote to clone from. Once it is, the process for a new machine will be:
-
 ```
-git clone --recurse-submodules <this-repo-url>
-cd HackerWiki
+git clone --recurse-submodules git@github.com:RichHacks/OfflineHackerWiki.git
+cd OfflineHackerWiki
 go run .
 ```
-
 
 Open http://localhost:8888. Custom port: `go run . -port 9000`.
 
