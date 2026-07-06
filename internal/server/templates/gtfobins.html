@@ -1,0 +1,172 @@
+{{define "gtfobins.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GTFOBins — HackerWiki</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { overflow: auto; background: #11141a; }
+    .gb-page { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+
+    .gb-page-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0 12px; border-bottom: 1px solid #2a2f3a; margin-bottom: 18px;
+    }
+    .gb-back { font-size: 12px; color: #8b949e; text-decoration: none;
+                font-family: var(--mono); display: flex; align-items: center; gap: 4px; }
+    .gb-back:hover { color: #e6edf3; }
+    .gb-page-title { font-size: 20px; font-weight: 700; color: #e6edf3; }
+    .gb-page-subtitle { font-size: 13px; color: #8b949e; margin-top: 2px; }
+    .gb-total-badge {
+      margin-left: auto; font-size: 12px; font-family: var(--mono);
+      color: #3fb950; background: rgba(63,185,80,.1);
+      border: 1px solid rgba(63,185,80,.25); border-radius: 10px; padding: 2px 10px;
+    }
+
+    .gb-controls {
+      display: flex; flex-direction: column; gap: 10px;
+      background: #1c2128; border: 1px solid #2a2f3a; border-radius: 8px;
+      padding: 14px; margin-bottom: 20px;
+    }
+    .gb-input {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; font-size: 13px; padding: 8px 10px; font-family: var(--mono);
+      width: 100%;
+    }
+    .gb-input:focus { outline: none; border-color: #3fb950; }
+    .gb-hint { font-size: 11px; color: #6e7681; }
+    .gb-hint code { color: #8b949e; }
+
+    .gb-legend { display: flex; flex-wrap: wrap; gap: 6px; }
+    .gb-legend-item {
+      font-size: 11px; font-family: var(--mono); color: #8b949e;
+      background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+      padding: 2px 8px; cursor: help;
+    }
+
+    .gb-tbl-wrap { overflow-x: auto; }
+    .gb-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .gb-tbl th {
+      background: #1c2128; border: 1px solid #2a2f3a;
+      padding: 7px 12px; text-align: left;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; color: #8b949e; white-space: nowrap;
+    }
+    .gb-tbl td { border: 1px solid #21262d; padding: 7px 12px; vertical-align: top; }
+    .gb-row:hover td { background: rgba(63,185,80,.03); }
+    .gb-row.hide { display: none; }
+    .gb-name { font-family: var(--mono); color: #3fb950; font-size: 13px; font-weight: 600; }
+    .gb-alias { font-size: 11px; color: #6e7681; margin-left: 6px; }
+
+    .gb-func-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .gb-pill {
+      font-size: 11px; font-family: var(--mono); text-decoration: none;
+      background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+      padding: 1px 8px; color: #79c0ff; white-space: nowrap;
+    }
+    .gb-pill:hover { border-color: #3fb950; color: #e6edf3; }
+    .gb-pill .ctx { color: #6e7681; }
+
+    .gb-empty { color: #6e7681; padding: 20px; text-align: center; font-size: 13px; }
+    .gb-showing { font-size: 12px; color: #8b949e; font-family: var(--mono); }
+    .gb-showing b { color: #3fb950; }
+  </style>
+</head>
+<body>
+<div class="gb-page">
+  <div class="gb-page-header">
+    <a href="/" class="gb-back">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      HackerWiki
+    </a>
+    <div>
+      <div class="gb-page-title">GTFOBins</div>
+      <div class="gb-page-subtitle">Unix executables that bypass local security restrictions in misconfigured systems</div>
+    </div>
+    <div class="gb-total-badge" id="gb-badge">{{.Total}} binaries</div>
+  </div>
+
+  <div class="gb-controls">
+    <input class="gb-input" id="gb-search" type="text" placeholder="Search by name, /function, or //context">
+    <div class="gb-hint">Plain text matches the binary name. <code>/shell</code> filters by function. <code>//sudo</code> filters by context. Regex supported.</div>
+    <div class="gb-legend">
+      {{range .Functions}}<span class="gb-legend-item" title="{{.Description}}">{{.Label}}</span>{{end}}
+    </div>
+  </div>
+
+  <div class="gb-tbl-wrap">
+    <table class="gb-tbl">
+      <thead><tr><th style="width:180px">Executable</th><th>Functions</th></tr></thead>
+      <tbody id="gb-body"></tbody>
+    </table>
+    <div class="gb-empty" id="gb-empty" style="display:none">No matches</div>
+  </div>
+  <p class="gb-showing" style="margin-top:10px">Showing <b id="gb-vis">{{.Total}}</b> of {{.Total}}</p>
+</div>
+
+<script>
+const ALL = {{.RowsJSON}};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function makeRow(b){
+  const tr=document.createElement('tr');
+  tr.className='gb-row';
+  tr.dataset.name=b.name.toLowerCase();
+  tr.dataset.funcs=b.functions.map(f=>f.label).join(' ').toLowerCase();
+  tr.dataset.ctxs=b.functions.flatMap(f=>f.contexts||[]).join(' ').toLowerCase();
+  const pills=b.functions.map(f=>{
+    const ctx=(f.contexts||[]).join(', ');
+    return `<a class="gb-pill" href="/gtfobins/${esc(b.name)}#${esc(f.key)}" title="${esc(ctx)}">${esc(f.label)}${ctx?` <span class="ctx">(${esc(ctx)})</span>`:''}</a>`;
+  }).join('');
+  tr.innerHTML=`<th><a class="gb-name" href="/gtfobins/${esc(b.name)}">${esc(b.name)}</a>${b.alias?`<span class="gb-alias">= ${esc(b.alias)}</span>`:''}</th>
+    <td><div class="gb-func-list">${pills}</div></td>`;
+  return tr;
+}
+
+const body=document.getElementById('gb-body');
+ALL.forEach(b=>body.appendChild(makeRow(b)));
+
+function applyFilter(){
+  const raw=document.getElementById('gb-search').value;
+  let mode='name', term=raw;
+  if(raw.startsWith('//')){ mode='ctx'; term=raw.slice(2); }
+  else if(raw.startsWith('/')){ mode='func'; term=raw.slice(1); }
+
+  let regexp=null;
+  if(term){ try{ regexp=new RegExp(term,'i'); }catch(e){ regexp=null; } }
+
+  let vis=0;
+  document.querySelectorAll('.gb-row').forEach(row=>{
+    let show=true;
+    if(regexp){
+      const against = mode==='func' ? row.dataset.funcs : mode==='ctx' ? row.dataset.ctxs : row.dataset.name;
+      show = regexp.test(against);
+    }
+    row.classList.toggle('hide', !show);
+    if(show) vis++;
+  });
+  document.getElementById('gb-vis').textContent=vis;
+  document.getElementById('gb-badge').textContent=vis+' binaries';
+  document.getElementById('gb-empty').style.display = vis===0 ? 'block' : 'none';
+}
+
+document.getElementById('gb-search').addEventListener('input', applyFilter);
+
+addEventListener('keydown', e=>{
+  const s=document.getElementById('gb-search');
+  if(e.key==='Escape'){ s.value=''; applyFilter(); s.blur(); }
+  else if(document.activeElement!==s && e.key.length===1 && !(e.ctrlKey||e.altKey||e.metaKey)){ s.focus(); }
+});
+
+const q=decodeURIComponent(location.hash.slice(1));
+if(q){ document.getElementById('gb-search').value=q; applyFilter(); }
+document.getElementById('gb-search').addEventListener('input', ()=>{
+  history.replaceState(null,null,'#'+encodeURIComponent(document.getElementById('gb-search').value));
+});
+</script>
+</body>
+</html>
+{{end}}

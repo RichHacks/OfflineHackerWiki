@@ -13,6 +13,8 @@ type Config struct {
 	CertipyPath         string
 	PayloadsPath        string
 	CyberChefPath       string
+	GTFOBinsPath        string
+	LOLBASPath          string
 }
 
 func Parse(contentBase string) *Config {
@@ -25,6 +27,8 @@ func Parse(contentBase string) *Config {
 	flag.StringVar(&cfg.CertipyPath, "certipy", joinBase(contentBase, "certipy"), "Path to Certipy wiki repo")
 	flag.StringVar(&cfg.PayloadsPath, "payloads", joinBase(contentBase, "payloadsallthethings"), "Path to PayloadsAllTheThings repo")
 	flag.StringVar(&cfg.CyberChefPath, "cyberchef", joinBase(contentBase, "cyberchef"), "Path to CyberChef static build (gh-pages)")
+	flag.StringVar(&cfg.GTFOBinsPath, "gtfobins", joinBase(contentBase, "gtfobins"), "Path to GTFOBins repo")
+	flag.StringVar(&cfg.LOLBASPath, "lolbas", joinBase(contentBase, "lolbas"), "Path to LOLBAS repo")
 
 	flag.Parse()
 	return cfg

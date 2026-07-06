@@ -81,6 +81,24 @@ func (s *Server) landingHandler(w http.ResponseWriter, r *http.Request) {
 			Icon:        "🧪",
 			Tag:         "Tool",
 		},
+		{
+			ID:          "gtfobins",
+			Name:        "GTFOBins",
+			Description: "Unix executables that can be abused to bypass local security restrictions in misconfigured systems.",
+			URL:         "/gtfobins/",
+			Enabled:     enabled(s.cfg.GTFOBinsPath),
+			Icon:        "🐧",
+			Tag:         "Cheat Sheet",
+		},
+		{
+			ID:          "lolbas",
+			Name:        "LOLBAS",
+			Description: "Living Off The Land Binaries, Scripts and Libraries: Windows executables abused for offensive purposes.",
+			URL:         "/lolbas/",
+			Enabled:     enabled(s.cfg.LOLBASPath),
+			Icon:        "🪟",
+			Tag:         "Cheat Sheet",
+		},
 	}
 
 	tmpl := template.Must(template.New("landing").ParseFS(assets, "templates/landing.html"))

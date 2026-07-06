@@ -1,0 +1,160 @@
+{{define "lolbas.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LOLBAS — HackerWiki</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { overflow: auto; background: #11141a; }
+    .lb-page { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
+
+    .lb-page-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0 12px; border-bottom: 1px solid #2a2f3a; margin-bottom: 18px;
+    }
+    .lb-back { font-size: 12px; color: #8b949e; text-decoration: none;
+                font-family: var(--mono); display: flex; align-items: center; gap: 4px; }
+    .lb-back:hover { color: #e6edf3; }
+    .lb-page-title { font-size: 20px; font-weight: 700; color: #e6edf3; }
+    .lb-page-subtitle { font-size: 13px; color: #8b949e; margin-top: 2px; }
+    .lb-total-badge {
+      margin-left: auto; font-size: 12px; font-family: var(--mono);
+      color: #58a6ff; background: rgba(88,166,255,.1);
+      border: 1px solid rgba(88,166,255,.25); border-radius: 10px; padding: 2px 10px;
+    }
+
+    .lb-controls {
+      display: flex; flex-direction: column; gap: 10px;
+      background: #1c2128; border: 1px solid #2a2f3a; border-radius: 8px;
+      padding: 14px; margin-bottom: 20px;
+    }
+    .lb-input {
+      background: #0d1117; border: 1px solid #30363d; border-radius: 6px;
+      color: #e6edf3; font-size: 13px; padding: 8px 10px; font-family: var(--mono);
+      width: 100%;
+    }
+    .lb-input:focus { outline: none; border-color: #58a6ff; }
+    .lb-hint { font-size: 11px; color: #6e7681; }
+    .lb-hint code { color: #8b949e; }
+
+    .lb-tbl-wrap { overflow-x: auto; }
+    .lb-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .lb-tbl th {
+      background: #1c2128; border: 1px solid #2a2f3a;
+      padding: 7px 12px; text-align: left;
+      font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; color: #8b949e; white-space: nowrap;
+    }
+    .lb-tbl td { border: 1px solid #21262d; padding: 7px 12px; vertical-align: top; }
+    .lb-row:hover td { background: rgba(88,166,255,.03); }
+    .lb-row.hide { display: none; }
+    .lb-name { font-family: var(--mono); color: #58a6ff; font-size: 13px; font-weight: 600; }
+
+    .lb-tag-list { display: flex; flex-wrap: wrap; gap: 4px; }
+    .lb-tag { font-size: 11px; font-family: var(--mono);
+      background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+      padding: 1px 8px; color: #d2a8ff; white-space: nowrap; }
+    .lb-cat { font-size: 12px; color: #8b949e; }
+    .lb-mitre { font-size: 11px; font-family: var(--mono); color: #f0883e; }
+
+    .lb-empty { color: #6e7681; padding: 20px; text-align: center; font-size: 13px; }
+    .lb-showing { font-size: 12px; color: #8b949e; font-family: var(--mono); }
+    .lb-showing b { color: #58a6ff; }
+  </style>
+</head>
+<body>
+<div class="lb-page">
+  <div class="lb-page-header">
+    <a href="/" class="lb-back">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      HackerWiki
+    </a>
+    <div>
+      <div class="lb-page-title">LOLBAS</div>
+      <div class="lb-page-subtitle">Living Off The Land Binaries, Scripts and Libraries — Windows edition of GTFOBins</div>
+    </div>
+    <div class="lb-total-badge" id="lb-badge">{{.Total}} binaries</div>
+  </div>
+
+  <div class="lb-controls">
+    <input class="lb-input" id="lb-search" type="text" placeholder="Search by name, /function, or #type">
+    <div class="lb-hint">Plain text matches the binary name or ATT&amp;CK ID. <code>/execute</code> filters by function. <code>#OSBinaries</code> filters by type. Regex supported.</div>
+  </div>
+
+  <div class="lb-tbl-wrap">
+    <table class="lb-tbl">
+      <thead><tr><th style="width:180px">Binary</th><th>Functions</th><th style="width:140px">Type</th><th style="width:140px">ATT&amp;CK Techniques</th></tr></thead>
+      <tbody id="lb-body"></tbody>
+    </table>
+    <div class="lb-empty" id="lb-empty" style="display:none">No matches</div>
+  </div>
+  <p class="lb-showing" style="margin-top:10px">Showing <b id="lb-vis">{{.Total}}</b> of {{.Total}}</p>
+</div>
+
+<script>
+const ALL = {{.RowsJSON}};
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function makeRow(b){
+  const tr=document.createElement('tr');
+  tr.className='lb-row';
+  tr.dataset.name=b.name.toLowerCase();
+  tr.dataset.funcs=(b.functions||[]).join(' ').toLowerCase();
+  tr.dataset.cat=b.category.toLowerCase();
+  tr.dataset.mitre=(b.mitre||[]).join(' ').toLowerCase();
+  const funcs=(b.functions||[]).map(f=>`<span class="lb-tag">${esc(f)}</span>`).join('');
+  const mitre=(b.mitre||[]).map(m=>`<span class="lb-mitre">${esc(m)}</span>`).join(' ');
+  tr.innerHTML=`<th><a class="lb-name" href="${esc(b.url)}">${esc(b.name)}</a></th>
+    <td><div class="lb-tag-list">${funcs}</div></td>
+    <td class="lb-cat">${esc(b.category)}</td>
+    <td>${mitre}</td>`;
+  return tr;
+}
+
+const body=document.getElementById('lb-body');
+ALL.forEach(b=>body.appendChild(makeRow(b)));
+
+function applyFilter(){
+  const raw=document.getElementById('lb-search').value;
+  let mode='name', term=raw;
+  if(raw.startsWith('#')){ mode='cat'; term=raw.slice(1); }
+  else if(raw.startsWith('/')){ mode='func'; term=raw.slice(1); }
+
+  let regexp=null;
+  if(term){ try{ regexp=new RegExp(term,'i'); }catch(e){ regexp=null; } }
+
+  let vis=0;
+  document.querySelectorAll('.lb-row').forEach(row=>{
+    let show=true;
+    if(regexp){
+      const against = mode==='func' ? row.dataset.funcs : mode==='cat' ? row.dataset.cat : (row.dataset.name+' '+row.dataset.mitre);
+      show = regexp.test(against);
+    }
+    row.classList.toggle('hide', !show);
+    if(show) vis++;
+  });
+  document.getElementById('lb-vis').textContent=vis;
+  document.getElementById('lb-badge').textContent=vis+' binaries';
+  document.getElementById('lb-empty').style.display = vis===0 ? 'block' : 'none';
+}
+
+document.getElementById('lb-search').addEventListener('input', applyFilter);
+
+addEventListener('keydown', e=>{
+  const s=document.getElementById('lb-search');
+  if(e.key==='Escape'){ s.value=''; applyFilter(); s.blur(); }
+  else if(document.activeElement!==s && e.key.length===1 && !(e.ctrlKey||e.altKey||e.metaKey)){ s.focus(); }
+});
+
+const q=decodeURIComponent(location.hash.slice(1));
+if(q){ document.getElementById('lb-search').value=q; applyFilter(); }
+document.getElementById('lb-search').addEventListener('input', ()=>{
+  history.replaceState(null,null,'#'+encodeURIComponent(document.getElementById('lb-search').value));
+});
+</script>
+</body>
+</html>
+{{end}}

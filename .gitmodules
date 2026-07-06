@@ -31,3 +31,9 @@
 	url = https://github.com/gchq/CyberChef.git
 	branch = gh-pages
 	shallow = true
+[submodule "content/gtfobins"]
+	path = content/gtfobins
+	url = https://github.com/GTFOBins/GTFOBins.github.io
+[submodule "content/lolbas"]
+	path = content/lolbas
+	url = https://github.com/LOLBAS-Project/LOLBAS

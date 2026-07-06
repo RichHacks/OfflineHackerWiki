@@ -10,6 +10,8 @@ import (
 	"hackerwiki/internal/config"
 	"hackerwiki/internal/dirwiki"
 	"hackerwiki/internal/flatwiki"
+	"hackerwiki/internal/gtfobins"
+	"hackerwiki/internal/lolbas"
 	"hackerwiki/internal/staticsite"
 	"hackerwiki/internal/wiki"
 	"hackerwiki/internal/xss"
@@ -85,6 +87,18 @@ func (s *Server) routes() {
 		cc := staticsite.New(s.cfg.CyberChefPath)
 		s.mux.Handle("/cyberchef/", http.StripPrefix("/cyberchef", cc))
 		s.mux.Handle("/cyberchef", http.RedirectHandler("/cyberchef/", http.StatusMovedPermanently))
+	}
+
+	if enabled(s.cfg.GTFOBinsPath) {
+		gb := gtfobins.New(s.cfg.GTFOBinsPath, mustParse(nil, "gtfobins.html", "gtfobins-bin.html"))
+		s.mux.Handle("/gtfobins/", http.StripPrefix("/gtfobins", gb))
+		s.mux.Handle("/gtfobins", http.RedirectHandler("/gtfobins/", http.StatusMovedPermanently))
+	}
+
+	if enabled(s.cfg.LOLBASPath) {
+		lb := lolbas.New(s.cfg.LOLBASPath, mustParse(nil, "lolbas.html", "lolbas-bin.html"))
+		s.mux.Handle("/lolbas/", http.StripPrefix("/lolbas", lb))
+		s.mux.Handle("/lolbas", http.RedirectHandler("/lolbas/", http.StatusMovedPermanently))
 	}
 }
 

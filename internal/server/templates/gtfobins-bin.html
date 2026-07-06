@@ -1,0 +1,137 @@
+{{define "gtfobins-bin.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Name}} — GTFOBins — HackerWiki</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { overflow: auto; background: #11141a; }
+    .gb-page { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+    .gb-page-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0 12px; border-bottom: 1px solid #2a2f3a; margin-bottom: 18px;
+    }
+    .gb-back { font-size: 12px; color: #8b949e; text-decoration: none;
+                font-family: var(--mono); display: flex; align-items: center; gap: 4px; }
+    .gb-back:hover { color: #e6edf3; }
+    .gb-page-title { font-size: 22px; font-weight: 700; color: #3fb950; font-family: var(--mono); }
+
+    .gb-alias-note { font-size: 13px; color: #8b949e; margin-bottom: 16px; }
+    .gb-alias-note a { color: #79c0ff; }
+
+    h2.function-name {
+      font-size: 16px; font-weight: 700; color: #e6edf3;
+      margin: 28px 0 6px; padding-bottom: 6px; border-bottom: 2px solid rgba(63,185,80,.3);
+    }
+    .gb-func-desc { font-size: 13px; color: #8b949e; margin-bottom: 10px; }
+    .gb-func-desc p { margin: 4px 0; }
+
+    ul.examples { list-style: none; }
+    ul.examples > li {
+      background: #161b22; border: 1px solid #2a2f3a; border-radius: 8px;
+      padding: 14px; margin-bottom: 14px;
+    }
+
+    fieldset {
+      border: 1px solid #2a2f3a; border-radius: 6px; padding: 8px 10px; margin: 8px 0;
+    }
+    legend { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+              color: #6e7681; padding: 0 6px; }
+    fieldset p, fieldset li { font-size: 13px; color: #c9d1d9; }
+    fieldset code, .gb-func-desc code, .gb-alias-note code { font-family: var(--mono); color: #79c0ff;
+      background: #0d1117; padding: 0 4px; border-radius: 3px; }
+
+    .gb-code {
+      font-family: var(--mono); font-size: 12.5px; line-height: 1.5; color: #a5d6ff;
+      background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+      padding: 10px 12px; margin: 8px 0 0; white-space: pre-wrap; word-break: break-word;
+      cursor: pointer; position: relative;
+    }
+    .gb-code:hover { border-color: #3fb950; }
+
+    .gb-contexts { display: flex; flex-direction: column; }
+    .gb-ctx-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+    .gb-ctx-tabs label {
+      font-size: 11px; font-family: var(--mono); padding: 3px 10px; border-radius: 10px;
+      background: #0d1117; border: 1px solid #30363d; color: #8b949e; cursor: pointer;
+    }
+    .gb-ctx-panel { display: none; }
+
+    .gb-pill { font-size: 11px; font-family: var(--mono); text-decoration: none;
+      background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+      padding: 1px 8px; color: #79c0ff; }
+    .gb-pill:hover { border-color: #3fb950; color: #e6edf3; }
+
+    .gb-footer { text-align: center; font-size: 12px; color: #6e7681; margin-top: 32px; }
+    .gb-footer a { color: #8b949e; }
+  </style>
+</head>
+<body>
+<div class="gb-page">
+  <div class="gb-page-header">
+    <a href="/gtfobins/" class="gb-back">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      GTFOBins
+    </a>
+    <div class="gb-page-title">{{.Name}}</div>
+  </div>
+
+  {{if .IsAlias}}
+  <p class="gb-alias-note">This is an alias of <a href="/gtfobins/{{.AliasTarget}}"><code>{{.AliasTarget}}</code></a>.</p>
+  {{end}}
+
+  {{range .Sections}}
+    <h2 id="{{.Key}}" class="function-name">{{.Label}}</h2>
+    <div class="gb-func-desc">{{.Description}}</div>
+    <ul class="examples">
+      {{range .Examples}}
+      <li>
+        {{.VersionHTML}}
+        {{.CommentHTML}}
+        <div class="gb-contexts">
+          <div class="gb-ctx-tabs">
+            {{range .Contexts}}<label data-for="{{.ID}}">{{.Label}}</label>{{end}}
+          </div>
+          {{range .Contexts}}
+          <div class="gb-ctx-panel" data-panel="{{.ID}}" {{if .Checked}}data-default="1"{{end}}>{{.BodyHTML}}</div>
+          {{end}}
+        </div>
+        {{.ExtraHTML}}
+      </li>
+      {{end}}
+    </ul>
+  {{end}}
+
+  {{.Comment}}
+
+  <p class="gb-footer">
+    <a href="{{.SourceURL}}">Source</a> · <a href="{{.HistoryURL}}">History</a>
+  </p>
+</div>
+<script>
+document.querySelectorAll('.gb-contexts').forEach(box=>{
+  const panels=box.querySelectorAll('.gb-ctx-panel');
+  const labels=box.querySelectorAll('.gb-ctx-tabs label');
+  function show(id){
+    panels.forEach(p=>p.style.display = p.dataset.panel===id ? 'block' : 'none');
+    labels.forEach(l=>{
+      const active = l.dataset.for===id;
+      l.style.background = active ? 'rgba(63,185,80,.15)' : '#0d1117';
+      l.style.color = active ? '#e6edf3' : '#8b949e';
+      l.style.borderColor = active ? '#3fb950' : '#30363d';
+    });
+  }
+  labels.forEach(l=>l.addEventListener('click', ()=>show(l.dataset.for)));
+  const def=box.querySelector('.gb-ctx-panel[data-default="1"]') || panels[0];
+  if(def) show(def.dataset.panel);
+});
+document.querySelectorAll('.gb-code').forEach(el=>{
+  el.addEventListener('click', ()=>navigator.clipboard.writeText(el.textContent));
+});
+</script>
+</body>
+</html>
+{{end}}

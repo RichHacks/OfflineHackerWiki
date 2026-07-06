@@ -1,0 +1,149 @@
+{{define "lolbas-bin.html"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{.Name}} — LOLBAS — HackerWiki</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { overflow: auto; background: #11141a; }
+    .lb-page { max-width: 900px; margin: 0 auto; padding: 0 24px 80px; }
+
+    .lb-page-header {
+      display: flex; align-items: center; gap: 16px;
+      padding: 14px 0 12px; border-bottom: 1px solid #2a2f3a; margin-bottom: 18px;
+    }
+    .lb-back { font-size: 12px; color: #8b949e; text-decoration: none;
+                font-family: var(--mono); display: flex; align-items: center; gap: 4px; }
+    .lb-back:hover { color: #e6edf3; }
+    .lb-page-title { font-size: 22px; font-weight: 700; color: #58a6ff; font-family: var(--mono); }
+    .lb-page-cat { font-size: 12px; color: #8b949e; margin-left: auto; }
+
+    .lb-desc { font-size: 13px; color: #c9d1d9; margin-bottom: 16px; }
+    .lb-meta { font-size: 12px; color: #8b949e; margin-bottom: 20px; }
+    .lb-meta b { color: #c9d1d9; }
+
+    section { margin: 22px 0; }
+    section h3 {
+      font-size: 13px; font-weight: 700; color: #e6edf3; text-transform: uppercase;
+      letter-spacing: .04em; margin-bottom: 8px; padding-bottom: 6px;
+      border-bottom: 2px solid rgba(88,166,255,.3);
+    }
+    section ul { list-style: none; font-size: 13px; }
+    section ul li { padding: 3px 0; color: #c9d1d9; }
+    section code { font-family: var(--mono); background: #0d1117; padding: 0 4px; border-radius: 3px; color: #79c0ff; }
+    section a { color: #79c0ff; }
+
+    h2.function-name {
+      font-size: 16px; font-weight: 700; color: #e6edf3;
+      margin: 28px 0 6px; padding-bottom: 6px; border-bottom: 2px solid rgba(88,166,255,.3);
+    }
+    ol.lb-commands { list-style: decimal; padding-left: 20px; }
+    ol.lb-commands > li {
+      background: #161b22; border: 1px solid #2a2f3a; border-radius: 8px;
+      padding: 14px; margin-bottom: 14px;
+    }
+    .lb-cmd-desc { font-size: 13px; color: #c9d1d9; margin-bottom: 6px; }
+    .lb-code {
+      font-family: var(--mono); font-size: 12.5px; line-height: 1.5; color: #a5d6ff;
+      background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+      padding: 10px 12px; margin: 6px 0; white-space: pre-wrap; word-break: break-word;
+      cursor: pointer;
+    }
+    .lb-code:hover { border-color: #58a6ff; }
+    .lb-props { display: flex; flex-direction: column; gap: 3px; margin-top: 8px; }
+    .lb-prop { font-size: 12px; color: #8b949e; }
+    .lb-prop b { color: #8b949e; font-weight: 600; margin-right: 4px; }
+    .lb-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .lb-tag { font-size: 11px; font-family: var(--mono);
+      background: #0d1117; border: 1px solid #30363d; border-radius: 10px;
+      padding: 1px 8px; color: #d2a8ff; }
+
+    .lb-footer { text-align: center; font-size: 12px; color: #6e7681; margin-top: 32px; }
+  </style>
+</head>
+<body>
+<div class="lb-page">
+  <div class="lb-page-header">
+    <a href="/lolbas/" class="lb-back">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      LOLBAS
+    </a>
+    <div class="lb-page-title">{{.Name}}</div>
+    <div class="lb-page-cat">{{.Category}}</div>
+  </div>
+
+  <div class="lb-desc">{{.DescriptionHTML}}</div>
+  <div class="lb-meta">
+    {{if .Author}}<b>Author:</b> {{.Author}} &nbsp;{{end}}
+    {{if .Created}}<b>Created:</b> {{.Created}}{{end}}
+    {{if .Aliases}}<br><b>Aliases:</b> {{range $i, $a := .Aliases}}{{if $i}}, {{end}}<code>{{$a}}</code>{{end}}{{end}}
+  </div>
+
+  {{if .Paths}}
+  <section>
+    <h3>Paths</h3>
+    <ul>{{range .Paths}}<li><code>{{.}}</code></li>{{end}}</ul>
+  </section>
+  {{end}}
+
+  {{if .CodeSamples}}
+  <section>
+    <h3>Code samples</h3>
+    <ul>{{range .CodeSamples}}<li><a href="{{.}}">{{.}}</a></li>{{end}}</ul>
+  </section>
+  {{end}}
+
+  {{if .Resources}}
+  <section>
+    <h3>Resources</h3>
+    <ul>{{range .Resources}}<li><a href="{{.}}">{{.}}</a></li>{{end}}</ul>
+  </section>
+  {{end}}
+
+  {{if .Acknowledgement}}
+  <section>
+    <h3>Acknowledgements</h3>
+    <ul>{{range .Acknowledgement}}<li>{{.Person}}{{if .Handle}} (<a href="https://twitter.com/{{.Handle}}">{{.Handle}}</a>){{end}}</li>{{end}}</ul>
+  </section>
+  {{end}}
+
+  {{if .Detections}}
+  <section>
+    <h3>Detection</h3>
+    <ul>{{range .Detections}}<li><b>{{.Key}}:</b> {{if .IsLink}}<a href="{{.Value}}">{{.Value}}</a>{{else}}{{.Value}}{{end}}</li>{{end}}</ul>
+  </section>
+  {{end}}
+
+  {{range .Sections}}
+    <h2 id="{{.Key}}" class="function-name">{{.Label}}</h2>
+    <ol class="lb-commands">
+      {{range .Commands}}
+      <li>
+        <div class="lb-cmd-desc">{{.DescriptionHTML}}</div>
+        {{.CodeHTML}}
+        <div class="lb-props">
+          {{if .Usecase}}<div class="lb-prop"><b>Use case:</b> {{.Usecase}}</div>{{end}}
+          {{if .Privileges}}<div class="lb-prop"><b>Privileges required:</b> {{.Privileges}}</div>{{end}}
+          {{if .OperatingSystem}}<div class="lb-prop"><b>Operating systems:</b> {{.OperatingSystem}}</div>{{end}}
+          {{if .MitreID}}<div class="lb-prop"><b>ATT&amp;CK technique:</b> {{.MitreID}}</div>{{end}}
+        </div>
+        {{if .Tags}}<div class="lb-tags">{{range .Tags}}<span class="lb-tag">{{.}}</span>{{end}}</div>{{end}}
+      </li>
+      {{end}}
+    </ol>
+  {{end}}
+
+  <p class="lb-footer">
+    <a href="https://github.com/LOLBAS-Project/LOLBAS/blob/master/yml/{{.Category}}/{{.Slug}}.yml">Source</a>
+  </p>
+</div>
+<script>
+document.querySelectorAll('.lb-code').forEach(el=>{
+  el.addEventListener('click', ()=>navigator.clipboard.writeText(el.textContent));
+});
+</script>
+</body>
+</html>
+{{end}}
